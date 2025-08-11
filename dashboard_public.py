@@ -184,7 +184,7 @@ positions = ["All", "GKP", "DEF", "MID", "FWD"]
 selected_position = st.sidebar.selectbox("Position", positions, key="dash_position")
 teams = ["All"] + sorted(df['team_name'].unique())
 selected_team = st.sidebar.selectbox("Team", teams, key="dash_team")
-hide_drafted = st.sidebar.checkbox("Hide drafted players", value=False, key="hide_drafted")
+hide_drafted = st.sidebar.checkbox("Hide drafted players", value=True, key="hide_drafted")
 
 filtered_df = df.copy()
 if selected_position != "All":
@@ -195,6 +195,26 @@ if hide_drafted:
     filtered_df = filtered_df[~filtered_df['id'].isin(selected_player_ids)]
 
 filtered_df = filtered_df.sort_values(by='my_rank')
+
+display_df = filtered_df.copy()
+
+display_df['drafted'] = display_df['id'].isin(selected_player_ids)
+
+display_df = display_df.drop(columns=['first_name', 'second_name', 'now_cost', 'value_season',
+                                      'selected_by_percent', 'form', 'bps', 'status',
+                                      'chance_of_playing_next_round', 'news', 'team', 'id', 'element_type', 'points_per_game'])
+
+display_df = display_df.reset_index(drop=True)
+display_df.index += 1
+
+cols = display_df.columns.tolist()
+new_order = ['tier', 'my_rank', 'draft_rank', 'web_name', 'position', 'team_name'] + \
+            [col for col in cols if col not in ['tier', 'my_rank', 'draft_rank', 'web_name', 'position', 'team_name']]
+display_df = display_df[new_order]
+
+styled_df = display_df.style.apply(highlight_row, axis=1)
+st.subheader("All Players")
+st.dataframe(styled_df, use_container_width=True)
 
 undrafted_df = filtered_df[~filtered_df['id'].isin(selected_player_ids)]
 
@@ -220,23 +240,3 @@ if not top10.empty:
     st.altair_chart(chart, use_container_width=True)
 else:
     st.info("No available players to show in Top 10 chart.")
-
-display_df = filtered_df.copy()
-
-display_df['drafted'] = display_df['id'].isin(selected_player_ids)
-
-display_df = display_df.drop(columns=['first_name', 'second_name', 'now_cost', 'value_season',
-                                      'selected_by_percent', 'form', 'bps', 'status',
-                                      'chance_of_playing_next_round', 'news', 'team', 'id', 'element_type', 'points_per_game'])
-
-display_df = display_df.reset_index(drop=True)
-display_df.index += 1
-
-cols = display_df.columns.tolist()
-new_order = ['tier', 'my_rank', 'draft_rank', 'web_name', 'position', 'team_name'] + \
-            [col for col in cols if col not in ['tier', 'my_rank', 'draft_rank', 'web_name', 'position', 'team_name']]
-display_df = display_df[new_order]
-
-styled_df = display_df.style.apply(highlight_row, axis=1)
-st.subheader("All Players")
-st.dataframe(styled_df, use_container_width=True)
